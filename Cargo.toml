@@ -1,0 +1,3 @@
+[workspace]
+members = ["tojak-core", "tojak-gui"]
+resolver = "3"
