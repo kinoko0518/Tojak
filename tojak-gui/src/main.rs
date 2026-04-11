@@ -1,34 +1,29 @@
 mod components;
 mod welcome;
 
-use gpui::{App, Application, Bounds, WindowBounds, WindowOptions, div, prelude::*, px, size};
+use gpui::{
+    App, Application, Bounds, Entity, WindowBounds, WindowOptions, div, prelude::*, px, size,
+};
+use gpui_component::Root;
 
-#[derive(Default)]
+use crate::welcome::WelcomeScreen;
+
 enum KtStatus {
-    #[default]
-    Welcome,
+    Welcome(Entity<WelcomeScreen>),
 }
 
 struct Kakitubata {
     status: KtStatus,
 }
 
-impl Default for Kakitubata {
-    fn default() -> Self {
-        Self {
-            status: KtStatus::default(),
-        }
-    }
-}
-
 impl Render for Kakitubata {
     fn render(
         &mut self,
-        _: &mut gpui::Window,
-        cx: &mut gpui::Context<Self>,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        div().size_full().child(match self.status {
-            KtStatus::Welcome => self.render_welcome(cx),
+        div().size_full().child(match &self.status {
+            KtStatus::Welcome(w) => w.clone(),
         })
     }
 }
@@ -37,12 +32,21 @@ fn main() {
     Application::new().run(|cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(800.), px(500.0)), cx);
         gpui_component::init(cx);
+
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
             },
-            |_, cx| cx.new(|_| Kakitubata::default()),
+            |window, cx| {
+                let app_view = cx.new(|cx| {
+                    let welcome_entity = cx.new(|_| WelcomeScreen::default());
+                    Kakitubata {
+                        status: KtStatus::Welcome(welcome_entity),
+                    }
+                });
+                cx.new(|cx| Root::new(app_view, window, cx))
+            },
         )
         .unwrap();
     });

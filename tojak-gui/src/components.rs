@@ -1,4 +1,4 @@
-use gpui::{App, Div, ElementId, div, prelude::*, px, rgb, rgba};
+use gpui::{App, Div, ElementId, Length, div, prelude::*, px, rgb, rgba};
 use gpui_component::{
     Sizable,
     button::{Button, ButtonCustomVariant, ButtonVariants},
@@ -22,7 +22,7 @@ pub fn tj_island() -> Div {
         .border_color(rgba(BORDER))
 }
 
-pub fn tj_button(cx: &mut App, id: impl Into<ElementId>) -> Button {
+pub fn tj_btn(cx: &mut App, id: impl Into<ElementId>) -> Button {
     let variant = ButtonCustomVariant::new(cx)
         .color(rgb(0xffffff).into())
         .hover(rgb(0xc0c0c0).into());
@@ -34,6 +34,17 @@ pub fn tj_button(cx: &mut App, id: impl Into<ElementId>) -> Button {
         .text_color(rgb(0x000000))
 }
 
+pub fn tj_scnd_btn(cx: &mut App, id: impl Into<ElementId>) -> Button {
+    let variant = ButtonCustomVariant::new(cx).border(rgba(0xffffff80).into());
+    Button::new(id)
+        .custom(variant)
+        .rounded(px(f32::MAX))
+        .border_1()
+        .small()
+        .p_4()
+        .text_color(rgb(0xffffff))
+}
+
 pub fn tj_border() -> impl IntoElement {
     div().bg(rgba(BORDER)).w_full().h(px(1.))
 }
@@ -43,4 +54,22 @@ pub fn subtext(text: impl IntoElement) -> Div {
         .child(text)
         .text_size(px(12.))
         .text_color(rgba(GHOST_TEXT))
+}
+
+pub fn description_and_content() -> Div {
+    div()
+        .w_full()
+        .flex()
+        .flex_row()
+        .justify_between()
+        .items_center()
+        .gap_16()
+}
+
+pub fn title_and_detail(
+    width: impl Clone + Into<Length>,
+    title: impl IntoElement,
+    detail: impl IntoElement,
+) -> Div {
+    div().w(width).child(title).child(subtext(detail))
 }
