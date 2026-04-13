@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gpui::{Div, Entity, SharedString, div, prelude::*};
 use gpui_component::{

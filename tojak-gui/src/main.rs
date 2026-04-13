@@ -1,15 +1,18 @@
 mod components;
 mod welcome;
+mod workspace;
 
 use gpui::{
     App, Application, Bounds, Entity, WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
 use gpui_component::Root;
 
-use crate::welcome::WelcomeScreen;
+use crate::{welcome::WelcomeScreen, workspace::Workspace};
 
+#[derive(Debug, Clone)]
 enum KtStatus {
     Welcome(Entity<WelcomeScreen>),
+    Workspace(Entity<Workspace>),
 }
 
 struct Kakitubata {
@@ -22,8 +25,9 @@ impl Render for Kakitubata {
         _window: &mut gpui::Window,
         _cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        div().size_full().child(match &self.status {
-            KtStatus::Welcome(w) => w.clone(),
+        div().size_full().child(match self.status.clone() {
+            KtStatus::Welcome(w) => w.into_any_element(),
+            KtStatus::Workspace(w) => w.into_any_element(),
         })
     }
 }
