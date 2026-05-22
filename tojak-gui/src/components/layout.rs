@@ -27,11 +27,11 @@ pub trait Horizontal2PanelLayout {
             .items_center()
     }
 
-    fn left_panel(window: &mut gpui::Window, cx: &mut Context<Self>) -> ModDiv<Self>
+    fn left_panel() -> ModDiv<Self>
     where
         Self: Sized;
 
-    fn right_panel(window: &mut gpui::Window, cx: &mut Context<Self>) -> ModDiv<Self>
+    fn right_panel() -> ModDiv<Self>
     where
         Self: Sized;
 
@@ -43,13 +43,13 @@ pub trait Horizontal2PanelLayout {
             .size_full()
             .flex()
             .flex_row()
-            .child(Self::left_panel(window, cx)(
+            .child(Self::left_panel()(
                 self,
                 Self::left_panel_base(),
                 window,
                 cx,
             ))
-            .child(Self::right_panel(window, cx)(
+            .child(Self::right_panel()(
                 self,
                 Self::right_panel_base(),
                 window,

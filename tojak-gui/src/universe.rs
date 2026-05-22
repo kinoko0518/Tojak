@@ -1,6 +1,6 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use gpui::{AppContext, Entity, ParentElement, Render, Styled};
+use gpui::{AppContext, Context, Entity, ParentElement, Render, Styled};
 use serde::{Deserialize, Serialize};
 
 use crate::components::{Horizontal2PanelLayout, SearchBar, title_and_detail};
@@ -11,8 +11,8 @@ pub struct UniverseMeta {
 }
 
 pub struct Universe {
-    path: PathBuf,
     meta: UniverseMeta,
+    path: PathBuf,
     search_bar: Option<Entity<SearchBar>>,
 }
 
@@ -45,7 +45,7 @@ impl Universe {
         })
     }
 
-    pub fn get_events(&self) -> Result<Vec<EventRef>, std::io::Error> {
+    pub fn get_events(&self, cx: &mut Context<Self>) -> Result<Vec<EventRef>, std::io::Error> {
         Ok(std::fs::read_dir(&self.path)?
             .filter_map(|entry| entry.ok())
             .filter_map(|entry| {
@@ -55,6 +55,15 @@ impl Universe {
                     .and_then(|name| {
                         name.rsplit_once(".")
                             .and_then(|(left, right)| ["json"].contains(&right).then(|| left))
+                    })
+                    .filter(|name: &&str| {
+                        self.search_bar
+                            .as_ref()
+                            .map(|sb| {
+                                let text = sb.update(cx, |_, cx| sb.read(cx).get_text(cx));
+                                text.is_empty() || name.contains(&text)
+                            })
+                            .unwrap_or(true)
                     })
                     .map(|name| EventRef {
                         title: name.into(),
@@ -66,10 +75,7 @@ impl Universe {
 }
 
 impl Horizontal2PanelLayout for Universe {
-    fn left_panel(
-        window: &mut gpui::Window,
-        cx: &mut gpui::prelude::Context<Self>,
-    ) -> crate::components::ModDiv<Self>
+    fn left_panel() -> crate::components::ModDiv<Self>
     where
         Self: Sized,
     {
@@ -79,31 +85,24 @@ impl Horizontal2PanelLayout for Universe {
             }
             let search_bar = me.search_bar.clone().unwrap();
 
-            original
-                .px_4()
-                .py_2()
-                .child(search_bar)
-                .children(
-                    me.get_events()
-                        .unwrap_or(vec![])
-                        .into_iter()
-                        .map(|event_ref| {
-                            title_and_detail(
-                                Self::TEXT_WIDTH,
-                                event_ref.title,
-                                event_ref.path.to_string_lossy().to_string(),
-                            )
-                            .px_4()
-                            .py_2()
-                        }),
-                )
+            original.px_4().py_2().child(search_bar).children(
+                me.get_events(cx)
+                    .unwrap_or(vec![])
+                    .into_iter()
+                    .map(|event_ref| {
+                        title_and_detail(
+                            Self::TEXT_WIDTH,
+                            event_ref.title,
+                            event_ref.path.to_string_lossy().to_string(),
+                        )
+                        .px_4()
+                        .py_2()
+                    }),
+            )
         }
     }
 
-    fn right_panel(
-        window: &mut gpui::Window,
-        cx: &mut gpui::prelude::Context<Self>,
-    ) -> crate::components::ModDiv<Self>
+    fn right_panel() -> crate::components::ModDiv<Self>
     where
         Self: Sized,
     {

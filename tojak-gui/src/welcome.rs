@@ -41,7 +41,7 @@ struct WorldRef {
 const GREATEST_CATHEGORY_TERM: &str = "ユニバース";
 
 impl Horizontal2PanelLayout for WelcomeScreen {
-    fn left_panel(_: &mut gpui::Window, _: &mut Context<Self>) -> ModDiv<Self> {
+    fn left_panel() -> ModDiv<Self> {
         |me, base, _, _| {
             base.children(me.worlds.iter().map(|world| {
                 div()
@@ -57,7 +57,7 @@ impl Horizontal2PanelLayout for WelcomeScreen {
         }
     }
 
-    fn right_panel(_: &mut gpui::Window, _: &mut Context<Self>) -> ModDiv<Self> {
+    fn right_panel() -> ModDiv<Self> {
         Self::render_right_panel
     }
 }
