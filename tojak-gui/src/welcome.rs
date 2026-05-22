@@ -5,7 +5,14 @@ use std::path::PathBuf;
 
 use crate::components::{BORDER, DARKER_BG, GHOST_TEXT, LIGHTER_BG, subtext, tj_island};
 pub use crate::welcome::create_new_world::CreateNewWorld;
-use gpui::{Div, Pixels, SharedString, Window, div, prelude::*, px, rgb, rgba};
+use const_format::concatcp;
+use gpui::{Div, EventEmitter, Pixels, SharedString, Window, div, prelude::*, px, rgb, rgba};
+
+pub enum WelcomeEvent {
+    GoToWorkspace(PathBuf),
+}
+
+impl EventEmitter<WelcomeEvent> for WelcomeScreen {}
 
 enum WelcomeState {
     MainMenu,
@@ -30,6 +37,8 @@ struct WorldRef {
     name: SharedString,
     path: PathBuf,
 }
+
+const GREATEST_CATHEGORY_TERM: &str = "ユニバース";
 
 impl WelcomeScreen {
     const MENU_WIDTH: Pixels = px(375.);
@@ -60,9 +69,10 @@ impl WelcomeScreen {
     fn render_rightpanel(&mut self, _: &mut Window, cx: &mut Context<Self>) -> Div {
         let (title, island_inside) = match &mut self.state {
             WelcomeState::MainMenu => ("杜若へようこそ！", Self::render_main_menu(cx)),
-            WelcomeState::CreateNewWorld(cnw) => {
-                ("世界を作成", Self::render_new_world_menu(cnw, cx))
-            }
+            WelcomeState::CreateNewWorld(cnw) => (
+                concatcp!(GREATEST_CATHEGORY_TERM, "を作成"),
+                Self::render_new_world_menu(cnw, cx),
+            ),
         };
         let welcome = div()
             .flex()

@@ -1,5 +1,8 @@
 use crate::components::{description_and_content, title_and_detail, tj_border, tj_btn};
-use crate::welcome::{CreateNewWorld, WelcomeScreen, WelcomeState};
+use crate::welcome::{
+    CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeEvent, WelcomeScreen, WelcomeState,
+};
+use const_format::concatcp;
 use gpui::{Div, div, prelude::*};
 use gpui_component::input::InputState;
 
@@ -8,7 +11,7 @@ impl WelcomeScreen {
         let new_world = description_and_content()
             .child(title_and_detail(
                 Self::TEXT_WIDTH,
-                "世界を新規作成する",
+                concatcp!(GREATEST_CATHEGORY_TERM, "を新規作成する"),
                 "本編、下書き、設定を保管する最上位のワークスペースを作成します",
             ))
             .child(
@@ -23,13 +26,32 @@ impl WelcomeScreen {
                         });
                     })),
             );
+        let select_fn = cx.listener(|_, _, _, cx| {
+            cx.spawn(async move |view, cx| {
+                let path = rfd::AsyncFileDialog::new()
+                    .pick_folder()
+                    .await
+                    .map(|file| file.path().to_path_buf());
+                if let Some(path) = path {
+                    let _ = view.update(cx, |_, cx| {
+                        cx.emit(WelcomeEvent::GoToWorkspace(path));
+                    });
+                }
+            })
+            .detach();
+        });
         let open_world = description_and_content()
             .child(title_and_detail(
                 Self::TEXT_WIDTH,
-                "世界としてフォルダを開く",
-                "世界として作成されたフォルダを開きます",
+                concatcp!(GREATEST_CATHEGORY_TERM, "を開く"),
+                concatcp!(GREATEST_CATHEGORY_TERM, "としてフォルダを開きます"),
             ))
-            .child(tj_btn(cx, "open_world").label("開く").w(Self::BUTTON_WIDTH));
+            .child(
+                tj_btn(cx, "open_world")
+                    .label("開く")
+                    .w(Self::BUTTON_WIDTH)
+                    .on_click(select_fn),
+            );
         div()
             .flex()
             .flex_col()

@@ -1,5 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use const_format::concatcp;
 use gpui::{Div, Entity, SharedString, div, prelude::*};
 use gpui_component::{
     Disableable,
@@ -10,7 +11,8 @@ use crate::{
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
-    welcome::{WelcomeScreen, WelcomeState, WorldRef},
+    welcome::{GREATEST_CATHEGORY_TERM, WelcomeEvent, WelcomeScreen, WelcomeState, WorldRef},
+    workspace::Universe,
 };
 
 pub struct CreateNewWorld {
@@ -64,8 +66,8 @@ impl WelcomeScreen {
                 description_and_content()
                     .child(title_and_detail(
                         Self::TEXT_WIDTH,
-                        "世界の名称",
-                        "作成する世界の名称を設定します",
+                        concatcp!(),
+                        concatcp!("作成する", GREATEST_CATHEGORY_TERM, "の名称を設定します"),
                     ))
                     .child(Input::new(&cnw.name_input)),
             )
@@ -75,7 +77,11 @@ impl WelcomeScreen {
                     .child(title_and_detail(
                         Self::TEXT_WIDTH,
                         "保存場所を選択",
-                        "選択したフォルダの下に世界のデータを保存するフォルダが作成されます",
+                        concatcp!(
+                            "選択したフォルダの下に",
+                            GREATEST_CATHEGORY_TERM,
+                            "のデータを保存するフォルダが作成されます"
+                        ),
                     ))
                     .child(select_path),
             )
@@ -97,10 +103,17 @@ impl WelcomeScreen {
                     )
                     .child({
                         let read = cnw.name_input.read(cx).value();
-                        let packed_info: Option<(PathBuf, SharedString)> = if let Some(path) = &cnw.picked_path
+                        let packed_info: Option<(PathBuf, SharedString)> = if let Some(path) =
+                            &cnw.picked_path
                             && !read.is_empty()
                         {
-                            Some((path.clone(), read))
+                            Some((path.clone().join(read.as_str()), read)).and_then(
+                                |(path, name)| {
+                                    Universe::new(path.clone(), name.to_string())
+                                        .ok()
+                                        .map(|_| (path, name))
+                                },
+                            )
                         } else {
                             None
                         };
@@ -108,17 +121,17 @@ impl WelcomeScreen {
                             .label("作成")
                             .w(Self::BUTTON_WIDTH)
                             .disabled(packed_info.is_none())
-                            .on_click(cx.listener(move |view, _, _, _| {
+                            .on_click(cx.listener(move |view, _, _, cx| {
                                 if let Some((path, name)) = &packed_info {
                                     view.worlds.push(WorldRef {
                                         name: name.clone(),
-                                        path: path.clone()
+                                        path: path.clone(),
                                     });
+                                    cx.emit(WelcomeEvent::GoToWorkspace(path.clone()));
                                 } else {
                                     eprintln!(
                                         "
-                                        [Tojak] Something went wrong! It occured because joined_path at
-                                        create_new_world.rs was None on 作成 button clicked, and it's unable.
+                                        [Tojak] ディレクトリの作成に失敗しました
                                         "
                                     )
                                 }
