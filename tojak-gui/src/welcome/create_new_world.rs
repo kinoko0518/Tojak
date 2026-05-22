@@ -11,8 +11,8 @@ use crate::{
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
+    universe::Universe,
     welcome::{GREATEST_CATHEGORY_TERM, WelcomeEvent, WelcomeScreen, WelcomeState, WorldRef},
-    workspace::Universe,
 };
 
 pub struct CreateNewWorld {
@@ -94,6 +94,7 @@ impl WelcomeScreen {
                     .justify_center()
                     .gap_2()
                     .child(
+                        // 戻るボタン
                         tj_scnd_btn(cx, "back_to_main_menu")
                             .label("戻る")
                             .w(Self::BUTTON_WIDTH)

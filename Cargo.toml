@@ -8,6 +8,7 @@ ayame = { git = "https://github.com/kinoko0518/aozora-rs/", version = "0.1.0" }
 
 gpui = "0.2.2"
 gpui-component = "0.5.1"
+include_dir = "0.7"
 rfd = "0.17.2"
 const_format = "0.2.36"
 serde = { version = "1.0.228", features = ["derive"] }
