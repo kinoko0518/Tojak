@@ -27,7 +27,10 @@ impl Kakitubata {
         let welcome_entity = cx.new(|_| WelcomeScreen::default());
         cx.subscribe(&welcome_entity, |this, _, event, cx| match event {
             WelcomeEvent::GoToWorkspace(path) => match Universe::from_path(path.clone()) {
-                Ok(universe) => this.status = KtStatus::Workspace(cx.new(|_| universe)),
+                Ok(universe) => {
+                    this.status = KtStatus::Workspace(cx.new(|_| universe));
+                    cx.notify();
+                }
                 Err(err) => {
                     eprintln!("[Tojak] ユニバースは破損しています：{}", err);
                 }

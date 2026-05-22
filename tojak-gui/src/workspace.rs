@@ -1,7 +1,9 @@
 use std::{fs::read_to_string, path::PathBuf};
 
-use gpui::{Render, div};
+use gpui::Render;
 use serde::{Deserialize, Serialize};
+
+use crate::components::Horizontal2PanelLayout;
 
 #[derive(Serialize, Deserialize)]
 pub struct UniverseMeta {
@@ -30,12 +32,34 @@ impl Universe {
     }
 }
 
+impl Horizontal2PanelLayout for Universe {
+    fn left_panel(
+        window: &mut gpui::Window,
+        cx: &mut gpui::prelude::Context<Self>,
+    ) -> crate::components::ModDiv<Self>
+    where
+        Self: Sized,
+    {
+        |me, div, _, _| div
+    }
+
+    fn right_panel(
+        window: &mut gpui::Window,
+        cx: &mut gpui::prelude::Context<Self>,
+    ) -> crate::components::ModDiv<Self>
+    where
+        Self: Sized,
+    {
+        |me, div, _, _| div
+    }
+}
+
 impl Render for Universe {
     fn render(
         &mut self,
         window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        div()
+        self.render_layout(window, cx)
     }
 }
