@@ -103,6 +103,7 @@ impl WelcomeScreen {
                             })),
                     )
                     .child({
+                        // 作成ボタン
                         let read = cnw.name_input.read(cx).value();
                         let packed_info: Option<(PathBuf, SharedString)> = if let Some(path) =
                             &cnw.picked_path
@@ -110,7 +111,7 @@ impl WelcomeScreen {
                         {
                             Some((path.clone().join(read.as_str()), read)).and_then(
                                 |(path, name)| {
-                                    Universe::new(path.clone(), name.to_string())
+                                    Universe::new(path.clone(), name.to_string(), cx)
                                         .ok()
                                         .map(|_| (path, name))
                                 },
@@ -130,11 +131,7 @@ impl WelcomeScreen {
                                     });
                                     cx.emit(WelcomeEvent::GoToWorkspace(path.clone()));
                                 } else {
-                                    eprintln!(
-                                        "
-                                        [Tojak] ディレクトリの作成に失敗しました
-                                        "
-                                    )
+                                    eprintln!("[Tojak] ディレクトリの作成に失敗しました");
                                 }
                             }))
                     }),

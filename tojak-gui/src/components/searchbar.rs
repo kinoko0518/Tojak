@@ -5,14 +5,13 @@ use gpui_component::{
 };
 
 pub struct SearchBar {
-    id: SharedString,
     input_state: Entity<InputState>,
     on_change: Option<Box<dyn Fn(&str, &mut Context<Self>) + 'static>>,
     on_enter: Option<Box<dyn Fn(&str, &mut Context<Self>) + 'static>>,
 }
 
 impl SearchBar {
-    pub fn new(id: impl Into<SharedString>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let input_state = cx.new(|cx| InputState::new(window, cx));
 
         cx.subscribe(
@@ -38,36 +37,19 @@ impl SearchBar {
         .detach();
 
         Self {
-            id: id.into(),
             input_state,
             on_change: None,
             on_enter: None,
         }
     }
 
-    pub fn on_change<F>(mut self, callback: F) -> Self
-    where
-        F: Fn(&str, &mut Context<Self>) + 'static,
-    {
-        self.on_change = Some(Box::new(callback));
-        self
-    }
-
-    pub fn on_enter<F>(mut self, callback: F) -> Self
-    where
-        F: Fn(&str, &mut Context<Self>) + 'static,
-    {
-        self.on_enter = Some(Box::new(callback));
-        self
-    }
-
-    pub fn get_text(&self, cx: &Context<Self>) -> String {
+    pub fn get_text(&self, cx: &App) -> String {
         self.input_state.read(cx).text().to_string()
     }
 }
 
 impl Render for SearchBar {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         Input::new(&self.input_state)
             .appearance(false)
             .prefix(

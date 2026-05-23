@@ -1,6 +1,7 @@
 mod components;
 mod universe;
 mod welcome;
+mod work;
 
 use std::borrow::Cow;
 
