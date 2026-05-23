@@ -1,9 +1,0 @@
-[package]
-name = "tojak-core"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-ayame = { git = "https://github.com/kinoko0518/aozora-rs/", version = "0.1.0" }
-chrono = "0.4.44"
-uuid = "1.23.0"
