@@ -1,3 +1,4 @@
+mod editor;
 mod meta;
 mod render;
 
@@ -37,11 +38,16 @@ impl EventEmitter<GlobalEvent> for Universe {}
 
 impl EventEmitter<UniverseEvent> for Universe {}
 
+#[derive(Clone, PartialEq, gpui::Action)]
+pub struct HandleBackspace;
+
 impl Universe {
     pub fn new(window: &mut Window, cx: &mut App) -> Entity<Self> {
         let search_bar = cx.new(|cx| SearchBar::new(window, cx));
         let title_field = cx.new(|cx| InputState::new(window, cx));
-        let paragraphs = vec![];
+        let first_paragraph = cx.new(|cx| InputState::new(window, cx).auto_grow(1, usize::MAX));
+
+        let paragraphs = vec![first_paragraph.clone()];
 
         let this = cx.new(|_| Self {
             meta: None,
@@ -51,7 +57,11 @@ impl Universe {
             right_panel: UniverseRightPanel::Empty,
         });
 
-        cx.update_entity(&this, |_, cx| {
+        cx.bind_keys([gpui::KeyBinding::new("backspace", HandleBackspace, None)]);
+
+        cx.update_entity(&this, |this_mut, cx| {
+            this_mut.subscribe_to_paragraph(&first_paragraph, window, cx);
+
             cx.subscribe_in(&this, window, |this, _, event, window, cx| match event {
                 UniverseEvent::OpenEvent(name) => {
                     let path = this
@@ -77,7 +87,6 @@ impl Universe {
             })
             .detach();
         });
-
         this
     }
 
@@ -93,7 +102,7 @@ impl Universe {
     pub fn open_universe(
         &mut self,
         path: &Path,
-        window: &mut Window,
+        _: &mut Window,
         cx: &mut Context<Self>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let meta = UniverseMeta::read_by_path(&path)?;
