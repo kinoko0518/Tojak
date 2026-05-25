@@ -3,16 +3,15 @@ mod main_menu;
 
 use std::path::PathBuf;
 
-use crate::components::{GHOST_TEXT, Horizontal2PanelLayout, ModDiv, subtext, tj_island};
 pub use crate::welcome::create_new_world::CreateNewWorld;
+use crate::{
+    GlobalEvent,
+    components::{GHOST_TEXT, Horizontal2PanelLayout, ModDiv, subtext, tj_island},
+};
 use const_format::concatcp;
 use gpui::{Div, EventEmitter, Pixels, SharedString, div, prelude::*, px, rgb, rgba};
 
-pub enum WelcomeEvent {
-    GoToWorkspace(PathBuf),
-}
-
-impl EventEmitter<WelcomeEvent> for WelcomeScreen {}
+impl EventEmitter<GlobalEvent> for WelcomeScreen {}
 
 enum WelcomeState {
     MainMenu,

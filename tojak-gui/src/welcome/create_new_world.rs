@@ -8,11 +8,11 @@ use gpui_component::{
 };
 
 use crate::{
+    GlobalEvent,
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
-    universe::Universe,
-    welcome::{GREATEST_CATHEGORY_TERM, WelcomeEvent, WelcomeScreen, WelcomeState, WorldRef},
+    welcome::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState, WorldRef},
 };
 
 pub struct CreateNewWorld {
@@ -105,20 +105,10 @@ impl WelcomeScreen {
                     .child({
                         // 作成ボタン
                         let read = cnw.name_input.read(cx).value();
-                        let packed_info: Option<(PathBuf, SharedString)> = if let Some(path) =
-                            &cnw.picked_path
-                            && !read.is_empty()
-                        {
-                            Some((path.clone().join(read.as_str()), read)).and_then(
-                                |(path, name)| {
-                                    Universe::new(path.clone(), name.to_string(), cx)
-                                        .ok()
-                                        .map(|_| (path, name))
-                                },
-                            )
-                        } else {
-                            None
-                        };
+                        let packed_info: Option<(PathBuf, SharedString)> =
+                            (&cnw.picked_path.as_ref())
+                                .and_then(|path| (!read.is_empty()).then(|| path))
+                                .map(|path| (path.join(read.as_str()), read));
                         tj_btn(cx, "create_world")
                             .label("作成")
                             .w(Self::BUTTON_WIDTH)
@@ -129,7 +119,10 @@ impl WelcomeScreen {
                                         name: name.clone(),
                                         path: path.clone(),
                                     });
-                                    cx.emit(WelcomeEvent::GoToWorkspace(path.clone()));
+                                    cx.emit(GlobalEvent::CreateWorkspace((
+                                        path.clone(),
+                                        name.to_string(),
+                                    )));
                                 } else {
                                     eprintln!("[Tojak] ディレクトリの作成に失敗しました");
                                 }

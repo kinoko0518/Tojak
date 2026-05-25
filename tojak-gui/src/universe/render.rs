@@ -1,14 +1,14 @@
 use std::path::Path;
 
 use gpui::{
-    AppContext, Context, Div, InteractiveElement, ParentElement, Render, Stateful,
-    StatefulInteractiveElement, Styled, div, linear_color_stop, linear_gradient, rgba,
+    Context, Div, InteractiveElement, ParentElement, Render, Stateful, StatefulInteractiveElement,
+    Styled, div, linear_color_stop, linear_gradient, rgba,
 };
-use gpui_component::{Icon, scroll::ScrollableElement};
+use gpui_component::{Icon, input::Input, scroll::ScrollableElement};
 
 use crate::{
-    components::{Horizontal2PanelLayout, SearchBar, subtext, title_and_detail},
-    universe::{EventRef, Universe, UniverseRightPanel},
+    components::{Horizontal2PanelLayout, subtext, title_and_detail},
+    universe::{EventRef, Universe, UniverseEvent, UniverseRightPanel},
 };
 
 impl Universe {
@@ -28,8 +28,8 @@ impl Universe {
                     .to_string(),
             )
             .id(("list-of-event", i))
-            .on_click(cx.listener(move |this, _, _, cx| {
-                this.change_event_now_on(event_ref.title.clone(), cx);
+            .on_click(cx.listener(move |_, _, _, cx| {
+                cx.emit(UniverseEvent::OpenEvent(event_ref.title.clone()));
             }))
         }
     }
@@ -40,18 +40,15 @@ impl Horizontal2PanelLayout for Universe {
     where
         Self: Sized,
     {
-        |me, original, window, cx| {
-            if me.search_bar.is_none() {
-                me.search_bar = Some(cx.new(|cx| SearchBar::new(window, cx)));
-            }
-            let search_bar = me.search_bar.clone().unwrap();
+        |me, original, _, cx| {
+            let search_bar = me.search_bar.clone();
             let create_new = div().flex().flex_col().items_center().gap_2().child(
                 div()
                     .child(Icon::empty().path("icons/flag.svg"))
                     .p_2()
                     .id("new-event")
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        this.create_new_event("無題のイベント".into(), cx);
+                    .on_click(cx.listener(|_, _, _, cx| {
+                        cx.emit(UniverseEvent::CreateEvent("無題のイベント".into()));
                     })),
             );
 
@@ -62,11 +59,19 @@ impl Horizontal2PanelLayout for Universe {
                 .child(search_bar)
                 .child(create_new)
                 .children(
-                    me.get_events(cx)
+                    me.meta
+                        .as_ref()
+                        .and_then(|meta| {
+                            let text = me.search_bar.read(cx).get_text(cx);
+                            let query = (!text.is_empty()).then(|| text.as_str());
+                            meta.read_events(query).ok()
+                        })
                         .unwrap_or(vec![])
                         .into_iter()
                         .enumerate()
-                        .map(|(i, event_ref)| (me.path.as_path(), i, event_ref))
+                        .filter_map(|(i, path)| {
+                            me.meta.as_ref().map(|meta| (meta.path.as_path(), i, path))
+                        })
                         .map(Self::render_event_list(cx)),
                 )
         }
@@ -86,7 +91,7 @@ impl Horizontal2PanelLayout for Universe {
                         .items_center()
                         .child("まだ何も開いていません")
                         .child(subtext("第一話から始めましょう。")),
-                    UniverseRightPanel::EventEdit(event) => {
+                    UniverseRightPanel::EventEdit => {
                         let contents = div()
                             .id("edit-main-scroll")
                             .size_full()
@@ -120,7 +125,7 @@ impl Horizontal2PanelLayout for Universe {
                                 linear_color_stop(rgba(0x000000ff), 0.),
                                 linear_color_stop(rgba(0x00000000), 1.),
                             ))
-                            .child(event.name.clone());
+                            .child(Input::new(&me.title_field).appearance(false));
                         div().size_full().relative().child(contents).child(header)
                     }
                 }

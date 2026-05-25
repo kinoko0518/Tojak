@@ -3,19 +3,17 @@ mod universe;
 mod welcome;
 mod work;
 
-use std::borrow::Cow;
+use std::{borrow::Cow, path::PathBuf};
 
 use gpui::{
-    App, Application, AssetSource, Bounds, Entity, WindowBounds, WindowOptions, div, prelude::*,
-    px, size,
+    App, Application, AssetSource, Bounds, Entity, Window, WindowBounds, WindowOptions, div,
+    prelude::*, px, rgb, size,
 };
 use gpui_component::Root;
 use include_dir::{Dir, include_dir};
+use time::OffsetDateTime;
 
-use crate::{
-    universe::Universe,
-    welcome::{WelcomeEvent, WelcomeScreen},
-};
+use crate::{universe::Universe, welcome::WelcomeScreen};
 
 static ASSETS: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
@@ -36,34 +34,60 @@ impl AssetSource for Assets {
     }
 }
 
+enum GlobalEvent {
+    PopupError(String),
+    CreateWorkspace((PathBuf, String)),
+    OpenWorkspace(PathBuf),
+}
+
 #[derive(Debug, Clone)]
 enum KtStatus {
-    Welcome(Entity<WelcomeScreen>),
-    Workspace(Entity<Universe>),
+    Welcome,
+    Workspace,
 }
 
 struct Kakitubata {
     status: KtStatus,
+
+    errors: Vec<(time::OffsetDateTime, String)>,
+
+    welcome: Entity<WelcomeScreen>,
+    universe: Entity<Universe>,
 }
 
 impl Kakitubata {
-    pub fn new(cx: &mut Context<Self>) -> Self {
-        let welcome_entity = cx.new(|_| WelcomeScreen::default());
-        cx.subscribe(&welcome_entity, |this, _, event, cx| match event {
-            WelcomeEvent::GoToWorkspace(path) => match Universe::from_path(path.clone()) {
-                Ok(universe) => {
-                    this.status = KtStatus::Workspace(cx.new(|_| universe));
-                    cx.notify();
-                }
-                Err(err) => {
-                    eprintln!("[Tojak] ユニバースは破損しています：{}", err);
-                }
-            },
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let welcome = cx.new(|_| WelcomeScreen::default());
+        let universe = Universe::new(window, cx);
+        cx.subscribe_in(&welcome, window, |this, _, event, window, cx| match event {
+            GlobalEvent::PopupError(error) => {
+                this.errors.push((OffsetDateTime::now_utc(), error.clone()));
+                cx.notify();
+            }
+            GlobalEvent::OpenWorkspace(path) => {
+                this.universe.update(cx, |this, cx| {
+                    if let Err(error) = this.open_universe(path, window, cx) {
+                        cx.emit(GlobalEvent::PopupError(error.to_string()));
+                    }
+                });
+                this.status = KtStatus::Workspace;
+                cx.notify();
+            }
+            GlobalEvent::CreateWorkspace((path, name)) => {
+                this.universe.update(cx, |this, cx| {
+                    this.create_universe(path.clone(), name.clone(), cx);
+                });
+                this.status = KtStatus::Workspace;
+                cx.notify();
+            }
         })
         .detach();
 
         Kakitubata {
-            status: KtStatus::Welcome(welcome_entity),
+            welcome,
+            universe,
+            errors: vec![],
+            status: KtStatus::Welcome,
         }
     }
 }
@@ -74,10 +98,24 @@ impl Render for Kakitubata {
         _: &mut gpui::Window,
         _: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
-        div().size_full().child(match self.status.clone() {
-            KtStatus::Welcome(w) => w.into_any_element(),
-            KtStatus::Workspace(w) => w.into_any_element(),
-        })
+        div()
+            .size_full()
+            .child(match &self.status {
+                KtStatus::Welcome => self.welcome.clone().into_any_element(),
+                KtStatus::Workspace => self.universe.clone().into_any_element(),
+            })
+            .relative()
+            .child(
+                div()
+                    .absolute()
+                    .bottom_3()
+                    .right_3()
+                    .flex()
+                    .flex_col()
+                    .children(self.errors.iter().map(|(_, error)| {
+                        div().bg(rgb(0xf24680)).rounded_lg().child(error.clone())
+                    })),
+            )
     }
 }
 
@@ -92,7 +130,7 @@ fn main() {
                 ..Default::default()
             },
             |window, cx| {
-                let app_view = cx.new(|cx| Kakitubata::new(cx));
+                let app_view = cx.new(|cx| Kakitubata::new(window, cx));
                 cx.new(|cx| Root::new(app_view, window, cx))
             },
         )

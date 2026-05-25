@@ -1,116 +1,104 @@
+mod meta;
 mod render;
 
-use std::{fs::read_to_string, path::PathBuf};
+use gpui::{App, AppContext, Context, Entity, EventEmitter, Window};
+use gpui_component::input::InputState;
+use std::path::{Path, PathBuf};
 
-use gpui::{App, AppContext, Context, Entity, EventEmitter};
-use serde::{Deserialize, Serialize};
-
-use crate::{components::SearchBar, work::Event};
-
-#[derive(Serialize, Deserialize)]
-pub struct UniverseMeta {
-    pub name: String,
-}
+use crate::{GlobalEvent, components::SearchBar, universe::meta::UniverseMeta, work::Event};
 
 enum UniverseRightPanel {
     Empty,
-    EventEdit(Event),
+    EventEdit,
 }
-
-pub struct Universe {
-    meta: UniverseMeta,
-    path: PathBuf,
-    search_bar: Option<Entity<SearchBar>>,
-    right_panel: UniverseRightPanel,
-}
-
-const META_TOML_NAME: &str = "universe.toml";
 
 pub struct EventRef {
     title: String,
     path: PathBuf,
 }
 
+pub struct Universe {
+    meta: Option<UniverseMeta>,
+    right_panel: UniverseRightPanel,
+
+    // 左パネル
+    search_bar: Entity<SearchBar>,
+    // 右パネル：執筆画面
+    title_field: Entity<InputState>,
+    paragraphs: Vec<Entity<InputState>>,
+}
+
+pub enum UniverseEvent {
+    OpenEvent(String),
+    CreateEvent(String),
+}
+
+impl EventEmitter<GlobalEvent> for Universe {}
+
+impl EventEmitter<UniverseEvent> for Universe {}
+
 impl Universe {
-    pub fn create_new_event(&mut self, name: String, cx: &mut Context<Self>) {
-        match Event::new(&self.path, name) {
-            Ok(event) => {
-                self.right_panel = UniverseRightPanel::EventEdit(event);
-                cx.notify();
-            }
-            Err(err) => {
-                eprintln!("[Tojak] イベントの書き込みに失敗しました：{}", err);
-            }
-        }
-    }
-
-    pub fn change_event_now_on(&mut self, name: String, cx: &mut Context<Self>) {
-        match Event::read(&self.path, &name) {
-            Ok(event) => {
-                self.right_panel = UniverseRightPanel::EventEdit(event);
-                cx.notify();
-            }
-            Err(err) => {
-                eprintln!("[Tojak] イベントの読み込みに失敗しました：{}", err);
-            }
-        }
-    }
-
-    pub fn new(
-        path: PathBuf,
-        name: String,
-        cx: &mut App,
-    ) -> Result<Entity<Self>, Box<dyn std::error::Error>> {
-        let meta = UniverseMeta { name };
-        std::fs::create_dir_all(&path)?;
-        std::fs::write(&path.join(META_TOML_NAME), toml::to_string_pretty(&meta)?)?;
+    pub fn new(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        let search_bar = cx.new(|cx| SearchBar::new(window, cx));
+        let title_field = cx.new(|cx| InputState::new(window, cx));
+        let paragraphs = vec![];
 
         let this = cx.new(|_| Self {
-            path,
-            meta,
-            search_bar: None,
+            meta: None,
+            search_bar,
+            title_field,
+            paragraphs,
             right_panel: UniverseRightPanel::Empty,
         });
 
-        Ok(this)
-    }
-
-    pub fn from_path(path: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let meta_toml = read_to_string(path.join(META_TOML_NAME))?;
-        let meta = toml::from_str::<UniverseMeta>(&meta_toml)?;
-        Ok(Self {
-            path,
-            meta,
-            search_bar: None,
-            right_panel: UniverseRightPanel::Empty,
-        })
-    }
-
-    pub fn get_events(&self, cx: &mut Context<Self>) -> Result<Vec<EventRef>, std::io::Error> {
-        Ok(std::fs::read_dir(&self.path.join(Event::SUB_DIRECTORY))?
-            .filter_map(|entry| entry.ok())
-            .filter_map(|entry| {
-                entry
-                    .file_name()
-                    .to_str()
-                    .and_then(|name| {
-                        name.rsplit_once(".")
-                            .and_then(|(left, right)| ["json"].contains(&right).then(|| left))
-                    })
-                    .filter(|name: &&str| {
-                        self.search_bar
-                            .as_ref()
-                            .map(|sb| {
-                                let text = sb.read(cx).get_text(cx);
-                                text.is_empty() || name.contains(&text)
-                            })
-                            .unwrap_or(true)
-                    })
-                    .map(|name| EventRef {
-                        title: name.into(),
-                        path: entry.path(),
-                    })
+        cx.update_entity(&this, |_, cx| {
+            cx.subscribe_in(&this, window, |this, _, event, window, cx| match event {
+                UniverseEvent::OpenEvent(name) => {
+                    let path = this
+                        .meta
+                        .as_ref()
+                        .map(|meta| meta.path.clone())
+                        .unwrap()
+                        .join(Event::SUB_DIRECTORY)
+                        .join(name)
+                        .with_extension(".json");
+                    this.right_panel = UniverseRightPanel::EventEdit;
+                    this.title_field.update(cx, |title, cx| {
+                        title.set_value(name.clone(), window, cx);
+                        cx.notify();
+                    });
+                    if let Err(error) = this.open_universe(&path, window, cx) {
+                        cx.emit(GlobalEvent::PopupError(error.to_string()));
+                    }
+                }
+                UniverseEvent::CreateEvent(name) => {
+                    cx.emit(UniverseEvent::OpenEvent(name.clone()));
+                }
             })
-            .collect())
+            .detach();
+        });
+
+        this
+    }
+
+    pub fn create_universe(&mut self, path: PathBuf, name: String, cx: &mut Context<Self>) {
+        let meta = UniverseMeta { path, name };
+        if let Err(error) = meta.create_on_disk() {
+            cx.emit(GlobalEvent::PopupError(error.to_string()));
+        }
+        self.meta = Some(meta);
+        cx.notify();
+    }
+
+    pub fn open_universe(
+        &mut self,
+        path: &Path,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let meta = UniverseMeta::read_by_path(&path)?;
+        self.meta = Some(meta);
+        cx.notify();
+        Ok(())
     }
 }

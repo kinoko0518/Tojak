@@ -1,7 +1,6 @@
+use crate::GlobalEvent;
 use crate::components::{description_and_content, title_and_detail, tj_border, tj_btn};
-use crate::welcome::{
-    CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeEvent, WelcomeScreen, WelcomeState,
-};
+use crate::welcome::{CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
 use const_format::concatcp;
 use gpui::{Div, div, prelude::*};
 use gpui_component::input::InputState;
@@ -34,7 +33,7 @@ impl WelcomeScreen {
                     .map(|file| file.path().to_path_buf());
                 if let Some(path) = path {
                     let _ = view.update(cx, |_, cx| {
-                        cx.emit(WelcomeEvent::GoToWorkspace(path));
+                        cx.emit(GlobalEvent::OpenWorkspace(path));
                     });
                 }
             })
