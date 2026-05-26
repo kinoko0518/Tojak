@@ -6,7 +6,15 @@ use gpui::{App, AppContext, Context, Entity, EventEmitter, Window};
 use gpui_component::input::InputState;
 use std::path::{Path, PathBuf};
 
-use crate::{GlobalEvent, components::SearchBar, universe::meta::UniverseMeta, work::Event};
+use crate::{
+    GlobalEvent,
+    components::SearchBar,
+    universe::{
+        editor::{Paragraphs, TitleEdit},
+        meta::UniverseMeta,
+    },
+    work::Event,
+};
 
 enum UniverseRightPanel {
     Empty,
@@ -25,8 +33,8 @@ pub struct Universe {
     // 左パネル
     search_bar: Entity<SearchBar>,
     // 右パネル：執筆画面
-    title_field: Entity<InputState>,
-    paragraphs: Vec<Entity<InputState>>,
+    title_field: Entity<TitleEdit>,
+    paragraphs: Entity<Paragraphs>,
 }
 
 pub enum UniverseEvent {
@@ -44,10 +52,14 @@ pub struct HandleBackspace;
 impl Universe {
     pub fn new(window: &mut Window, cx: &mut App) -> Entity<Self> {
         let search_bar = cx.new(|cx| SearchBar::new(window, cx));
-        let title_field = cx.new(|cx| InputState::new(window, cx));
+        let title_field = cx.new(|cx| TitleEdit::new(window, cx));
         let first_paragraph = cx.new(|cx| InputState::new(window, cx).auto_grow(1, usize::MAX));
 
-        let paragraphs = vec![first_paragraph.clone()];
+        let paragraphs = cx.new(|cx| {
+            let mut p = editor::Paragraphs::new(vec![first_paragraph.clone()]);
+            p.subscribe_to_paragraph(&first_paragraph, window, cx);
+            p
+        });
 
         let this = cx.new(|_| Self {
             meta: None,
@@ -59,9 +71,7 @@ impl Universe {
 
         cx.bind_keys([gpui::KeyBinding::new("backspace", HandleBackspace, None)]);
 
-        cx.update_entity(&this, |this_mut, cx| {
-            this_mut.subscribe_to_paragraph(&first_paragraph, window, cx);
-
+        cx.update_entity(&this, |_, cx| {
             cx.subscribe_in(&this, window, |this, _, event, window, cx| match event {
                 UniverseEvent::OpenEvent(name) => {
                     let path = this
@@ -74,7 +84,7 @@ impl Universe {
                         .with_extension(".json");
                     this.right_panel = UniverseRightPanel::EventEdit;
                     this.title_field.update(cx, |title, cx| {
-                        title.set_value(name.clone(), window, cx);
+                        title.set_field(name.to_string(), window, cx);
                         cx.notify();
                     });
                     if let Err(error) = this.open_universe(&path, window, cx) {

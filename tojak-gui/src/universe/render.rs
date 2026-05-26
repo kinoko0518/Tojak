@@ -2,13 +2,13 @@ use std::path::Path;
 
 use gpui::{
     Context, Div, InteractiveElement, ParentElement, Render, Stateful, StatefulInteractiveElement,
-    Styled, div, linear_color_stop, linear_gradient, rgb, rgba,
+    Styled, div, linear_color_stop, linear_gradient, rgba,
 };
-use gpui_component::{Icon, input::Input, scroll::ScrollableElement};
+use gpui_component::{Icon, scroll::ScrollableElement};
 
 use crate::{
-    components::{BORDER, Horizontal2PanelLayout, LIGHTER_BG, subtext, title_and_detail},
-    universe::{EventRef, HandleBackspace, Universe, UniverseEvent, UniverseRightPanel},
+    components::{Horizontal2PanelLayout, subtext, title_and_detail},
+    universe::{EventRef, Universe, UniverseEvent, UniverseRightPanel},
 };
 
 gpui::actions!(universe, [ParagraphBackspace]);
@@ -53,6 +53,19 @@ impl Horizontal2PanelLayout for Universe {
                         cx.emit(UniverseEvent::CreateEvent("無題のイベント".into()));
                     })),
             );
+            let event_list = me
+                .meta
+                .as_ref()
+                .and_then(|meta| {
+                    let text = me.search_bar.read(cx).get_text(cx);
+                    let query = (!text.is_empty()).then(|| text.as_str());
+                    meta.read_events(query).ok()
+                })
+                .unwrap_or(vec![])
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, path)| me.meta.as_ref().map(|meta| (meta.path.as_path(), i, path)))
+                .map(Self::render_event_list(cx));
 
             original
                 .px_4()
@@ -60,22 +73,7 @@ impl Horizontal2PanelLayout for Universe {
                 .gap_2()
                 .child(search_bar)
                 .child(create_new)
-                .children(
-                    me.meta
-                        .as_ref()
-                        .and_then(|meta| {
-                            let text = me.search_bar.read(cx).get_text(cx);
-                            let query = (!text.is_empty()).then(|| text.as_str());
-                            meta.read_events(query).ok()
-                        })
-                        .unwrap_or(vec![])
-                        .into_iter()
-                        .enumerate()
-                        .filter_map(|(i, path)| {
-                            me.meta.as_ref().map(|meta| (meta.path.as_path(), i, path))
-                        })
-                        .map(Self::render_event_list(cx)),
-                )
+                .children(event_list)
         }
     }
 
@@ -83,7 +81,7 @@ impl Horizontal2PanelLayout for Universe {
     where
         Self: Sized,
     {
-        |me, original, _, cx| {
+        |me, original, _, _| {
             original.child({
                 match &me.right_panel {
                     UniverseRightPanel::Empty => div()
@@ -103,40 +101,7 @@ impl Horizontal2PanelLayout for Universe {
                             .flex()
                             .flex_col()
                             .gap_4()
-                            .children(me.paragraphs.iter().map(|paragraph| {
-                                let target_entity = paragraph.clone();
-                                div()
-                                    .p_2()
-                                    .child(
-                                        Input::new(paragraph)
-                                            .appearance(false)
-                                            .bg(rgb(LIGHTER_BG))
-                                            .p_4()
-                                            .rounded_lg()
-                                            .border_1()
-                                            .border_color(rgba(BORDER)),
-                                    )
-                                    .on_action(cx.listener(
-                                        move |this, _: &HandleBackspace, window, cx| {
-                                            let is_empty = target_entity
-                                                .read(cx)
-                                                .text()
-                                                .as_str()
-                                                .map(|text| text.is_empty())
-                                                .unwrap_or(true);
-
-                                            if is_empty {
-                                                this.remove_empty_paragraph(
-                                                    &target_entity,
-                                                    window,
-                                                    cx,
-                                                );
-                                            } else {
-                                                cx.propagate();
-                                            }
-                                        },
-                                    ))
-                            }));
+                            .child(me.paragraphs.clone());
                         let header = div()
                             .absolute()
                             .top_0()
@@ -151,7 +116,7 @@ impl Horizontal2PanelLayout for Universe {
                                 linear_color_stop(rgba(0x000000ff), 0.),
                                 linear_color_stop(rgba(0x00000000), 1.),
                             ))
-                            .child(Input::new(&me.title_field).appearance(false));
+                            .child(me.title_field.clone());
                         div().size_full().relative().child(contents).child(header)
                     }
                 }
