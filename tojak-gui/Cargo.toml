@@ -5,15 +5,21 @@ edition = "2024"
 
 [dependencies]
 const_format.workspace = true
+
 gpui.workspace = true
 gpui-component.workspace = true
+
 rfd.workspace = true
+
 include_dir.workspace = true
-serde.workspace = true
 directories.workspace = true
+
+serde.workspace = true
 toml.workspace = true
 serde_json.workspace = true
-time = "0.3.47"
+
+time.workspace = true
+winnow.workspace = true
 
 [[bin]]
 name = "tojak"
