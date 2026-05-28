@@ -31,7 +31,7 @@ pub struct Event {
 
 impl Editor {
     pub fn new(base: PathBuf, window: &mut Window, cx: &mut App) -> Entity<Self> {
-        let title_field = cx.new(|cx| TitleEdit::new(window, cx));
+        let title_field = TitleEdit::new(window, cx);
         let paragraphs = Paragraphs::empty(window, cx);
 
         let me = cx.new(|_| Self {
@@ -113,6 +113,14 @@ impl Editor {
         });
 
         Ok(())
+    }
+
+    pub fn rename(&self, old: &str, new: &str) -> std::io::Result<()> {
+        let event_dir = self.base.join(EVENT_SUBDIR);
+        std::fs::rename(
+            event_dir.join(old).with_extension(EVENT_EXTENSION),
+            event_dir.join(new).with_added_extension(EVENT_EXTENSION),
+        )
     }
 }
 

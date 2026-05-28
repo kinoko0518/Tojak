@@ -5,7 +5,7 @@ mod render;
 use gpui::{App, AppContext, Context, Entity, EventEmitter, Window};
 use std::path::PathBuf;
 
-use crate::{EventBus, acc_err, components::SearchBar, universe::editor::Editor};
+use crate::{EventBus, acc_err, components::SearchBar, emit_universe, universe::editor::Editor};
 
 pub use crate::universe::meta::UniverseMeta;
 
@@ -31,6 +31,7 @@ pub enum UniverseEvent {
     SaveEvent,
     OpenEvent(String),
     CreateEvent(String),
+    Rename((String, String)),
 }
 
 pub struct UniverseEventBus;
@@ -85,6 +86,13 @@ impl Universe {
                             editor.create(name, window, cx);
                             cx.notify();
                         });
+                    }
+                    UniverseEvent::Rename((old, new)) => {
+                        if let Err(err) = this.editor.read(cx).rename(&old, &new) {
+                            acc_err(err.to_string(), cx);
+                        }
+                        // リネーム時に変更されたメタデータを含めて最新状態を書き込む
+                        emit_universe(UniverseEvent::SaveEvent, cx);
                     }
                 },
             )
