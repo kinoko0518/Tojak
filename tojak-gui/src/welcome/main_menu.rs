@@ -1,4 +1,4 @@
-use crate::GlobalEvent;
+use crate::{GlobalEvent, emit_global};
 use crate::components::{description_and_content, title_and_detail, tj_border, tj_btn};
 use crate::welcome::{CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
 use const_format::concatcp;
@@ -33,7 +33,7 @@ impl WelcomeScreen {
                     .map(|file| file.path().to_path_buf());
                 if let Some(path) = path {
                     let _ = view.update(cx, |_, cx| {
-                        cx.emit(GlobalEvent::OpenWorkspace(path));
+                        emit_global(GlobalEvent::OpenWorkspace(path), cx);
                     });
                 }
             })

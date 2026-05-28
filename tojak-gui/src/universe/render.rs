@@ -1,13 +1,14 @@
 use std::path::Path;
 
 use gpui::{
-    Context, Div, InteractiveElement, ParentElement, Render, Stateful, StatefulInteractiveElement,
-    Styled, div, linear_color_stop, linear_gradient, rgba,
+    Context, Div, InteractiveElement, IntoElement, ParentElement, Render, Stateful,
+    StatefulInteractiveElement, Styled, div, px, rgba,
 };
-use gpui_component::{Icon, scroll::ScrollableElement};
+use gpui_component::Icon;
 
 use crate::{
-    components::{Horizontal2PanelLayout, subtext, title_and_detail},
+    EventBus, GlobalEvent, emit_global, emit_universe,
+    components::{GHOST_TEXT, Horizontal2PanelLayout, subtext, title_and_detail},
     universe::{EventRef, Universe, UniverseEvent, UniverseRightPanel},
 };
 
@@ -31,7 +32,10 @@ impl Universe {
             )
             .id(("list-of-event", i))
             .on_click(cx.listener(move |_, _, _, cx| {
-                cx.emit(UniverseEvent::OpenEvent(event_ref.title.clone()));
+                let bus = cx.global::<EventBus>().universe.clone();
+                bus.update(cx, |_, cx| {
+                    cx.emit(UniverseEvent::OpenEvent(event_ref.title.clone()));
+                })
             }))
         }
     }
@@ -50,22 +54,33 @@ impl Horizontal2PanelLayout for Universe {
                     .p_2()
                     .id("new-event")
                     .on_click(cx.listener(|_, _, _, cx| {
-                        cx.emit(UniverseEvent::CreateEvent("無題のイベント".into()));
+                        emit_universe(UniverseEvent::CreateEvent("無題のイベント".into()), cx);
                     })),
             );
-            let event_list = me
-                .meta
-                .as_ref()
-                .and_then(|meta| {
-                    let text = me.search_bar.read(cx).get_text(cx);
-                    let query = (!text.is_empty()).then(|| text.as_str());
-                    meta.read_events(query).ok()
-                })
-                .unwrap_or(vec![])
-                .into_iter()
-                .enumerate()
-                .filter_map(|(i, path)| me.meta.as_ref().map(|meta| (meta.path.as_path(), i, path)))
-                .map(Self::render_event_list(cx));
+            let events = {
+                let text = me.search_bar.read(cx).get_text(cx);
+                let query = (!text.is_empty()).then(|| text.as_str());
+                me.meta.read_events(query)
+            };
+            let event_list = match events {
+                Ok(events) => div().children(
+                    events
+                        .into_iter()
+                        .enumerate()
+                        .map(|(i, path)| (me.meta.path.as_path(), i, path))
+                        .map(Self::render_event_list(cx)),
+                ),
+                Err(error) => {
+                    emit_global(GlobalEvent::PopupError(error.to_string()), cx);
+                    div()
+                        .flex()
+                        .flex_col()
+                        .child("イベントリストの読み込みに失敗しました：")
+                        .child(error.to_string())
+                        .text_size(px(10.))
+                        .text_color(rgba(GHOST_TEXT))
+                }
+            };
 
             original
                 .px_4()
@@ -73,7 +88,7 @@ impl Horizontal2PanelLayout for Universe {
                 .gap_2()
                 .child(search_bar)
                 .child(create_new)
-                .children(event_list)
+                .child(event_list)
         }
     }
 
@@ -90,35 +105,9 @@ impl Horizontal2PanelLayout for Universe {
                         .justify_center()
                         .items_center()
                         .child("まだ何も開いていません")
-                        .child(subtext("第一話から始めましょう。")),
-                    UniverseRightPanel::EventEdit => {
-                        let contents = div()
-                            .id("edit-main-scroll")
-                            .size_full()
-                            .overflow_y_scrollbar()
-                            .pt_16()
-                            .p_8()
-                            .flex()
-                            .flex_col()
-                            .gap_4()
-                            .child(me.paragraphs.clone());
-                        let header = div()
-                            .absolute()
-                            .top_0()
-                            .left_0()
-                            .w_full()
-                            .h_16()
-                            .flex()
-                            .items_center()
-                            .px_4()
-                            .bg(linear_gradient(
-                                180.0,
-                                linear_color_stop(rgba(0x000000ff), 0.),
-                                linear_color_stop(rgba(0x00000000), 1.),
-                            ))
-                            .child(me.title_field.clone());
-                        div().size_full().relative().child(contents).child(header)
-                    }
+                        .child(subtext("第一話から始めましょう。"))
+                        .into_any_element(),
+                    UniverseRightPanel::EventEdit => me.editor.clone().into_any_element(),
                 }
             })
         }

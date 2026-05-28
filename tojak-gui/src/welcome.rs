@@ -5,13 +5,12 @@ use std::path::PathBuf;
 
 pub use crate::welcome::create_new_world::CreateNewWorld;
 use crate::{
-    GlobalEvent,
     components::{GHOST_TEXT, Horizontal2PanelLayout, ModDiv, subtext, tj_island},
 };
 use const_format::concatcp;
-use gpui::{Div, EventEmitter, Pixels, SharedString, div, prelude::*, px, rgb, rgba};
+use gpui::{Div, Pixels, SharedString, div, prelude::*, px, rgb, rgba};
 
-impl EventEmitter<GlobalEvent> for WelcomeScreen {}
+
 
 enum WelcomeState {
     MainMenu,

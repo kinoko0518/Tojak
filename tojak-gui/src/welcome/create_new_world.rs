@@ -8,7 +8,7 @@ use gpui_component::{
 };
 
 use crate::{
-    GlobalEvent,
+    GlobalEvent, emit_global,
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
@@ -119,10 +119,10 @@ impl WelcomeScreen {
                                         name: name.clone(),
                                         path: path.clone(),
                                     });
-                                    cx.emit(GlobalEvent::CreateWorkspace((
+                                    emit_global(GlobalEvent::CreateWorkspace((
                                         path.clone(),
                                         name.to_string(),
-                                    )));
+                                    )), cx);
                                 } else {
                                     eprintln!("[Tojak] ディレクトリの作成に失敗しました");
                                 }

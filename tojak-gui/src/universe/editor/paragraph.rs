@@ -1,43 +1,62 @@
 use gpui::{
-    AnyElement, AppContext, Context, Div, Entity, Focusable, InteractiveElement, IntoElement,
-    ParentElement, Render, StatefulInteractiveElement, Styled, Window, div, prelude::FluentBuilder,
-    px, rgb, rgba,
+    AnyElement, App, AppContext, Context, Div, Entity, FocusHandle, Focusable, InteractiveElement,
+    IntoElement, ParentElement, Render, StatefulInteractiveElement, Styled, Window, div,
+    prelude::FluentBuilder, px, rgb, rgba,
 };
 use gpui_component::input::{Input, InputEvent, InputState};
 
 use crate::{
-    components::{BORDER, LIGHTER_BG},
+    components::{ACCENT, BORDER, LIGHTER_BG},
+    emit_universe,
     universe::{
-        HandleBackspace,
+        HandleBackspace, UniverseEvent,
         editor::command::{ConditonedTransition, ParagraphKind, parse_paragraph_kind},
     },
 };
 
 pub struct Paragraphs {
-    inputs: Vec<Entity<InputState>>,
+    pub inputs: Vec<Entity<InputState>>,
+    focus_handle: FocusHandle,
 }
 
 impl Paragraphs {
-    pub fn new(inputs: Vec<Entity<InputState>>) -> Self {
-        Paragraphs { inputs }
+    pub fn new(inputs: Vec<Entity<InputState>>, cx: &mut App) -> Self {
+        Paragraphs {
+            inputs,
+            focus_handle: cx.focus_handle(),
+        }
+    }
+
+    pub fn empty(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        let first = cx.new(|cx| InputState::new(window, cx).auto_grow(1, usize::MAX));
+        let inputs = vec![first.clone()];
+
+        let this = cx.new(|cx| {
+            let mut paragraph = Paragraphs {
+                inputs,
+                focus_handle: cx.focus_handle(),
+            };
+            paragraph.subscribe_to_paragraph(&first, window, cx);
+            paragraph
+        });
+
+        this
     }
 }
-
-const COMMAND_BASE: u32 = 0xff7d7d_u32;
 
 fn cl() -> Div {
     div().flex().flex_row().gap_0p5().items_center()
 }
 
 fn pill(name: impl Into<String>) -> Div {
-    let flashy_cc = COMMAND_BASE << 8 | 0x50;
+    let flashy_cc = ACCENT << 8 | 0x50;
 
     div()
         .bg(rgba(flashy_cc))
         .px_2()
         .rounded_full()
         .text_size(px(11.))
-        .text_color(rgb(COMMAND_BASE))
+        .text_color(rgb(ACCENT))
         .child(name.into())
 }
 
@@ -88,7 +107,7 @@ fn conditioned_transition(ct: &ConditonedTransition) -> Div {
         )
 }
 
-fn render_paragraph(paragrakind: &ParagraphKind, input: AnyElement) -> AnyElement {
+fn render_paragraph(paragrakind: &ParagraphKind) -> AnyElement {
     match paragrakind {
         ParagraphKind::Get((left, right)) => bino(left, "が", right, "を獲得").into_any_element(),
         ParagraphKind::Lost((left, right)) => bino(left, "が", right, "を喪失").into_any_element(),
@@ -112,7 +131,13 @@ fn render_paragraph(paragrakind: &ParagraphKind, input: AnyElement) -> AnyElemen
         }
         ParagraphKind::UnconditionedTransition(path) => uno(path, "に続く").into_any_element(),
         ParagraphKind::ConditonedTransition(ct) => conditioned_transition(&ct).into_any_element(),
-        _ => input,
+        ParagraphKind::Otherwise(t) => div()
+            .flex()
+            .flex_row()
+            .text_color(rgb(ACCENT))
+            .child("無効なコマンド：")
+            .child(t.to_string())
+            .into_any_element(),
     }
 }
 
@@ -123,22 +148,21 @@ impl Render for Paragraphs {
         cx: &mut Context<Self>,
     ) -> impl gpui::prelude::IntoElement {
         div().children(self.inputs.iter().enumerate().map(|(i, paragraph)| {
+            let state = paragraph.read(cx);
+            let focus_handle = state.focus_handle(cx);
+
             let target_entity = paragraph.clone();
+
             div()
                 .p_2()
                 .child({
-                    let state = paragraph.read(cx);
+                    let text = state.text().as_str().unwrap_or("");
+                    let paragraph_kind = parse_paragraph_kind(text);
+                    let is_command = text.starts_with(":") || text.starts_with(">");
+                    let is_focused = focus_handle.is_focused(window);
 
-                    let paragraph_kind = state
-                        .text()
-                        .as_str()
-                        .map(|txt| parse_paragraph_kind(txt))
-                        .unwrap_or(ParagraphKind::JustText(""));
-                    let is_command = !matches!(paragraph_kind, ParagraphKind::JustText(_));
-                    let is_focused = state.focus_handle(cx).is_focused(window);
-
-                    let command_bg = rgba(COMMAND_BASE << 8 | 0x20);
-                    let command_border = rgba(COMMAND_BASE << 8 | 0x50);
+                    let command_bg = rgba(ACCENT << 8 | 0x20);
+                    let command_border = rgba(ACCENT << 8 | 0x50);
 
                     let input = Input::new(paragraph)
                         .appearance(false)
@@ -170,7 +194,7 @@ impl Render for Paragraphs {
                                 });
                                 cx.notify();
                             }))
-                            .child(render_paragraph(&paragraph_kind, input))
+                            .child(render_paragraph(&paragraph_kind))
                             .into_any_element()
                     } else {
                         input
@@ -190,6 +214,12 @@ impl Render for Paragraphs {
                         cx.propagate();
                     }
                 }))
+                .id(("paragraph", i))
+                .track_focus(&self.focus_handle)
+                .on_mouse_down_out(cx.listener(|_, _, window, cx| {
+                    emit_universe(UniverseEvent::SaveEvent, cx);
+                    window.blur();
+                }))
         }))
     }
 }
@@ -206,6 +236,8 @@ impl Paragraphs {
             window,
             |this, entity, event, window, cx| match event {
                 InputEvent::PressEnter { secondary } => {
+                    emit_universe(UniverseEvent::SaveEvent, cx);
+
                     let _ = secondary;
                     if let Some(text) = entity.read(cx).text().as_str()
                         && text.ends_with("\n\n")

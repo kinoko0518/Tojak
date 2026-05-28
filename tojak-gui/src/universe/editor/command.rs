@@ -1,6 +1,6 @@
 use winnow::{
     Parser,
-    ascii::{multispace0, space0, space1},
+    ascii::{multispace0, space0},
     combinator::{alt, delimited, eof, fail, opt, repeat, separated, terminated},
     token::take_while,
 };
@@ -69,7 +69,7 @@ pub enum ParagraphKind<'s> {
     /// ```
     ConditonedTransition(ConditonedTransition<'s>),
 
-    JustText(&'s str),
+    Otherwise(&'s str),
 }
 
 type PResult<T> = Result<T, ()>;
@@ -231,6 +231,6 @@ pub fn parse_paragraph_kind<'a>(input: &'a str) -> ParagraphKind<'a> {
     match res {
         Ok(kind) => kind,
         // 上記のフォーマットのいずれにも完全一致しなければフォールバック
-        Err(_) => ParagraphKind::JustText(input),
+        Err(_) => ParagraphKind::Otherwise(input),
     }
 }

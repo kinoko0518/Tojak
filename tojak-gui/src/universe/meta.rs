@@ -4,9 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const META_TOML_NAME: &str = "universe.toml";
+pub const META_TOML_NAME: &str = "universe.toml";
 
-use crate::{universe::EventRef, work::Event};
+use crate::{EVENT_SUBDIR, universe::EventRef};
 
 #[derive(Serialize, Deserialize)]
 pub struct UniverseMeta {
@@ -16,7 +16,7 @@ pub struct UniverseMeta {
 
 impl UniverseMeta {
     pub fn read_events(&self, query: Option<&str>) -> std::io::Result<Vec<EventRef>> {
-        Ok(std::fs::read_dir(&self.path.join(Event::SUB_DIRECTORY))?
+        Ok(std::fs::read_dir(&self.path.join(EVENT_SUBDIR))?
             .filter_map(|entry| entry.ok())
             .filter_map(|entry| {
                 entry
