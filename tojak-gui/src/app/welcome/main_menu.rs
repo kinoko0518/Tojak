@@ -1,6 +1,6 @@
-use super::{CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
+use super::{CreateNewUniverse, WelcomeScreen, WelcomeState};
 use crate::components::{description_and_content, title_and_detail, tj_border, tj_btn};
-use crate::{GlobalEvent, emit_global};
+use crate::{GREATEST_CATHEGORY_TERM, GlobalEvent, emit_global};
 use const_format::concatcp;
 use gpui::{Div, div, prelude::*};
 use gpui_component::input::InputState;
@@ -14,12 +14,12 @@ impl WelcomeScreen {
                 "本編、下書き、設定を保管する最上位のワークスペースを作成します",
             ))
             .child(
-                tj_btn(cx, "create_world")
+                tj_btn(cx, "create-universe")
                     .label("作成")
                     .w(Self::BUTTON_WIDTH)
                     .on_click(cx.listener(|view, _event, window, cx| {
                         let name_input = cx.new(|cx| InputState::new(window, cx));
-                        view.state = WelcomeState::CreateNewWorld(CreateNewWorld {
+                        view.state = WelcomeState::CreateNewUniverse(CreateNewUniverse {
                             name_input,
                             picked_path: None,
                         });
@@ -33,7 +33,7 @@ impl WelcomeScreen {
                     .map(|file| file.path().to_path_buf());
                 if let Some(path) = path {
                     let _ = view.update(cx, |_, cx| {
-                        emit_global(GlobalEvent::OpenWorkspace(path), cx);
+                        emit_global(GlobalEvent::OpenUniverse(path), cx);
                     });
                 }
             })
@@ -46,7 +46,7 @@ impl WelcomeScreen {
                 concatcp!(GREATEST_CATHEGORY_TERM, "としてフォルダを開きます"),
             ))
             .child(
-                tj_btn(cx, "open_world")
+                tj_btn(cx, "open-universe")
                     .label("開く")
                     .w(Self::BUTTON_WIDTH)
                     .on_click(select_fn),

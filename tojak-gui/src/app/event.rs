@@ -4,7 +4,7 @@ use std::path::PathBuf;
 pub enum GlobalEvent {
     PopupError(String),
     CreateWorkspace((PathBuf, String)),
-    OpenWorkspace(PathBuf),
+    OpenUniverse(PathBuf),
     BackToWelcome,
 }
 

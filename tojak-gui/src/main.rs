@@ -1,15 +1,9 @@
 mod app;
 mod components;
+mod consts;
 
-pub use app::*;
-
-pub(crate) const LIGHTER_BG: u32 = 0x202020;
-pub(crate) const DARKER_BG: u32 = 0x000000;
-
-pub(crate) const BORDER: u32 = 0xffffff20;
-pub(crate) const GHOST_TEXT: u32 = 0xffffff40;
-
-pub(crate) const ACCENT: u32 = 0xff7d7d;
+use app::*;
+use consts::*;
 
 use gpui::{App, Application, Bounds, WindowBounds, WindowOptions, prelude::*, px, size};
 use gpui_component::Root;

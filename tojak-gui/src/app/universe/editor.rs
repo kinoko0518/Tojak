@@ -13,7 +13,7 @@ pub use paragraph::Paragraphs;
 use serde::{Deserialize, Serialize};
 pub use title_edit::TitleEdit;
 
-use super::{EVENT_EXTENSION, EVENT_SUBDIR};
+use crate::{EVENT_EXTENSION, EVENT_SUBDIR};
 
 pub struct Editor {
     pub base: PathBuf,

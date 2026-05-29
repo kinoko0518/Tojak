@@ -8,22 +8,22 @@ use gpui_component::{
 };
 
 use crate::{
-    GlobalEvent,
+    GREATEST_CATHEGORY_TERM, GlobalEvent,
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
     emit_global,
 };
 
-use super::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState, WorldRef};
+use super::{WelcomeScreen, WelcomeState, WorldRef};
 
-pub struct CreateNewWorld {
+pub struct CreateNewUniverse {
     pub name_input: Entity<InputState>,
     pub picked_path: Option<PathBuf>,
 }
 
 impl WelcomeScreen {
-    pub fn render_new_world_menu(cnw: &mut CreateNewWorld, cx: &mut Context<Self>) -> Div {
+    pub fn render_new_world_menu(cnw: &mut CreateNewUniverse, cx: &mut Context<Self>) -> Div {
         let select_fn = cx.listener(|_view, _, _, cx| {
             cx.spawn(async move |view, cx| {
                 let path = rfd::AsyncFileDialog::new()
@@ -32,7 +32,7 @@ impl WelcomeScreen {
                     .map(|file| file.path().to_path_buf());
 
                 let _ = view.update(cx, |view, cx| {
-                    if let WelcomeState::CreateNewWorld(cnw) = &mut view.state {
+                    if let WelcomeState::CreateNewUniverse(cnw) = &mut view.state {
                         cnw.picked_path = path;
                         cx.notify();
                     }
@@ -97,7 +97,7 @@ impl WelcomeScreen {
                     .gap_2()
                     .child(
                         // 戻るボタン
-                        tj_scnd_btn(cx, "back_to_main_menu")
+                        tj_scnd_btn(cx, "back-to-main-menu")
                             .label("戻る")
                             .w(Self::BUTTON_WIDTH)
                             .on_click(cx.listener(|view, _, _, _| {
@@ -111,7 +111,7 @@ impl WelcomeScreen {
                             (&cnw.picked_path.as_ref())
                                 .and_then(|path| (!read.is_empty()).then(|| path))
                                 .map(|path| (path.join(read.as_str()), read));
-                        tj_btn(cx, "create_world")
+                        tj_btn(cx, "create-universe")
                             .label("作成")
                             .w(Self::BUTTON_WIDTH)
                             .disabled(packed_info.is_none())

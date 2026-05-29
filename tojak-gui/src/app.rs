@@ -46,7 +46,7 @@ impl Kakitubata {
                     this.errors.push((OffsetDateTime::now_utc(), error.clone()));
                     cx.notify();
                 }
-                GlobalEvent::OpenWorkspace(path) => {
+                GlobalEvent::OpenUniverse(path) => {
                     let meta = UniverseMeta::read_by_path(&path);
                     match meta {
                         Ok(meta) => {

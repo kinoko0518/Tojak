@@ -5,13 +5,11 @@ mod render;
 use gpui::SharedString;
 use std::path::PathBuf;
 
-use create_new_world::CreateNewWorld;
-
-const GREATEST_CATHEGORY_TERM: &str = "ユニバース";
+use create_new_world::CreateNewUniverse;
 
 enum WelcomeState {
     MainMenu,
-    CreateNewWorld(CreateNewWorld),
+    CreateNewUniverse(CreateNewUniverse),
 }
 
 pub struct WelcomeScreen {

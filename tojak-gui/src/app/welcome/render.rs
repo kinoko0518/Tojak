@@ -1,6 +1,6 @@
-use super::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
+use super::{WelcomeScreen, WelcomeState};
 use crate::{
-    GHOST_TEXT,
+    APP_NAME, GHOST_TEXT, GREATEST_CATHEGORY_TERM,
     components::{Horizontal2PanelLayout, ModDiv, subtext, tj_island},
 };
 use const_format::concatcp;
@@ -41,8 +41,11 @@ impl WelcomeScreen {
         cx: &mut Context<Self>,
     ) -> Div {
         let (title, island_inside) = match &mut self.state {
-            WelcomeState::MainMenu => ("杜若へようこそ！", Self::render_main_menu(cx)),
-            WelcomeState::CreateNewWorld(cnw) => (
+            WelcomeState::MainMenu => (
+                concatcp!(APP_NAME, "へようこそ！"),
+                Self::render_main_menu(cx),
+            ),
+            WelcomeState::CreateNewUniverse(cnw) => (
                 concatcp!(GREATEST_CATHEGORY_TERM, "を作成"),
                 Self::render_new_world_menu(cnw, cx),
             ),
@@ -60,7 +63,7 @@ impl WelcomeScreen {
                 div()
                     .text_size(px(12.))
                     .text_color(rgba(GHOST_TEXT))
-                    .child(concat!("杜若 v", env!("CARGO_PKG_VERSION")))
+                    .child(concatcp!(APP_NAME, " v", env!("CARGO_PKG_VERSION")))
                     .pt_4(),
             )
             .child(

@@ -12,10 +12,6 @@ use crate::components::SearchBar;
 
 pub(crate) use meta::UniverseMeta;
 
-pub(crate) const META_TOML_NAME: &str = "universe.toml";
-pub(crate) const EVENT_SUBDIR: &str = "events";
-pub(crate) const EVENT_EXTENSION: &str = "json";
-
 enum UniverseRightPanel {
     Empty,
     EventEdit,
