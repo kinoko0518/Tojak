@@ -110,7 +110,7 @@ impl Kakitubata {
                         Ok(meta) => {
                             let universe = Universe::new(meta, window, cx);
                             this.universe = Some(universe);
-                            this.status = KtStatus::Workspace;
+                            this.status = KtStatus::Welcome;
                             cx.notify();
                         }
                         Err(error) => {

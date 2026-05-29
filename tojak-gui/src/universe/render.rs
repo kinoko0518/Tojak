@@ -1,15 +1,14 @@
+mod left;
+mod right;
+
 use std::path::Path;
 
-use gpui::{
-    Context, Div, InteractiveElement, IntoElement, ParentElement, Render, Stateful,
-    StatefulInteractiveElement, Styled, div, px, rgba,
-};
-use gpui_component::Icon;
+use gpui::{Context, Div, InteractiveElement, Render, Stateful, StatefulInteractiveElement};
 
 use crate::{
-    EventBus, GlobalEvent, emit_global, emit_universe,
-    components::{GHOST_TEXT, Horizontal2PanelLayout, subtext, title_and_detail},
-    universe::{EventRef, Universe, UniverseEvent, UniverseRightPanel},
+    EventBus,
+    components::{Horizontal2PanelLayout, title_and_detail},
+    universe::{EventRef, Universe, UniverseEvent},
 };
 
 gpui::actions!(universe, [ParagraphBackspace]);
@@ -46,71 +45,14 @@ impl Horizontal2PanelLayout for Universe {
     where
         Self: Sized,
     {
-        |me, original, _, cx| {
-            let search_bar = me.search_bar.clone();
-            let create_new = div().flex().flex_col().items_center().gap_2().child(
-                div()
-                    .child(Icon::empty().path("icons/flag.svg"))
-                    .p_2()
-                    .id("new-event")
-                    .on_click(cx.listener(|_, _, _, cx| {
-                        emit_universe(UniverseEvent::CreateEvent("無題のイベント".into()), cx);
-                    })),
-            );
-            let events = {
-                let text = me.search_bar.read(cx).get_text(cx);
-                let query = (!text.is_empty()).then(|| text.as_str());
-                me.meta.read_events(query)
-            };
-            let event_list = match events {
-                Ok(events) => div().children(
-                    events
-                        .into_iter()
-                        .enumerate()
-                        .map(|(i, path)| (me.meta.path.as_path(), i, path))
-                        .map(Self::render_event_list(cx)),
-                ),
-                Err(error) => {
-                    emit_global(GlobalEvent::PopupError(error.to_string()), cx);
-                    div()
-                        .flex()
-                        .flex_col()
-                        .child("イベントリストの読み込みに失敗しました：")
-                        .child(error.to_string())
-                        .text_size(px(10.))
-                        .text_color(rgba(GHOST_TEXT))
-                }
-            };
-
-            original
-                .px_4()
-                .py_2()
-                .gap_2()
-                .child(search_bar)
-                .child(create_new)
-                .child(event_list)
-        }
+        Self::left
     }
 
     fn right_panel() -> crate::components::ModDiv<Self>
     where
         Self: Sized,
     {
-        |me, original, _, _| {
-            original.child({
-                match &me.right_panel {
-                    UniverseRightPanel::Empty => div()
-                        .flex()
-                        .flex_col()
-                        .justify_center()
-                        .items_center()
-                        .child("まだ何も開いていません")
-                        .child(subtext("第一話から始めましょう。"))
-                        .into_any_element(),
-                    UniverseRightPanel::EventEdit => me.editor.clone().into_any_element(),
-                }
-            })
-        }
+        Self::right
     }
 }
 
