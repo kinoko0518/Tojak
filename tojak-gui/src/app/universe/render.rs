@@ -6,10 +6,11 @@ use std::path::Path;
 use gpui::{Context, Div, InteractiveElement, Render, Stateful, StatefulInteractiveElement};
 
 use crate::{
-    EventBus,
+    EventBus, UniverseEvent,
     components::{Horizontal2PanelLayout, title_and_detail},
-    universe::{EventRef, Universe, UniverseEvent},
 };
+
+use super::{EventRef, Universe};
 
 gpui::actions!(universe, [ParagraphBackspace]);
 

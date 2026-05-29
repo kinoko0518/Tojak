@@ -1,12 +1,11 @@
+use crate::app::universe::EVENT_EXTENSION;
+
+use super::{EVENT_SUBDIR, EventRef, META_TOML_NAME};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::read_to_string,
     path::{Path, PathBuf},
 };
-
-pub const META_TOML_NAME: &str = "universe.toml";
-
-use crate::{EVENT_SUBDIR, universe::EventRef};
 
 #[derive(Serialize, Deserialize)]
 pub struct UniverseMeta {
@@ -23,8 +22,9 @@ impl UniverseMeta {
                     .file_name()
                     .to_str()
                     .and_then(|name| {
-                        name.rsplit_once(".")
-                            .and_then(|(left, right)| ["json"].contains(&right).then(|| left))
+                        name.rsplit_once(".").and_then(|(left, right)| {
+                            [EVENT_EXTENSION].contains(&right).then(|| left)
+                        })
                     })
                     .filter(|name: &&str| query.map(|query| name.contains(query)).unwrap_or(true))
                     .map(|name| EventRef {

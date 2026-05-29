@@ -1,45 +1,10 @@
-mod editor;
-mod meta;
-mod render;
-
-use gpui::{App, AppContext, Context, Entity, EventEmitter, Window};
 use std::path::PathBuf;
 
-use crate::{EventBus, acc_err, components::SearchBar, emit_universe, universe::editor::Editor};
+use gpui::{App, Context, Entity, Window, prelude::*};
 
-pub use crate::universe::meta::UniverseMeta;
+use crate::{EventBus, UniverseEvent, acc_err, emit_universe};
 
-enum UniverseRightPanel {
-    Empty,
-    EventEdit,
-}
-
-pub struct EventRef {
-    title: String,
-    path: PathBuf,
-}
-
-pub struct Universe {
-    meta: UniverseMeta,
-    right_panel: UniverseRightPanel,
-
-    search_bar: Entity<SearchBar>,
-    editor: Entity<Editor>,
-}
-
-pub enum UniverseEvent {
-    SaveEvent,
-    OpenEvent(String),
-    CreateEvent(String),
-    Rename((String, String)),
-}
-
-pub struct UniverseEventBus;
-
-impl EventEmitter<UniverseEvent> for UniverseEventBus {}
-
-#[derive(Clone, PartialEq, gpui::Action)]
-pub struct HandleBackspace;
+use super::{Editor, HandleBackspace, SearchBar, Universe, UniverseMeta, UniverseRightPanel};
 
 impl Universe {
     pub fn new(meta: UniverseMeta, window: &mut Window, cx: &mut App) -> Entity<Self> {

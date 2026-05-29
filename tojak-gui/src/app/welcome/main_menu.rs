@@ -1,6 +1,6 @@
-use crate::{GlobalEvent, emit_global};
+use super::{CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
 use crate::components::{description_and_content, title_and_detail, tj_border, tj_btn};
-use crate::welcome::{CreateNewWorld, GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
+use crate::{GlobalEvent, emit_global};
 use const_format::concatcp;
 use gpui::{Div, div, prelude::*};
 use gpui_component::input::InputState;

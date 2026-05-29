@@ -8,12 +8,14 @@ use gpui_component::{
 };
 
 use crate::{
-    GlobalEvent, emit_global,
+    GlobalEvent,
     components::{
         description_and_content, subtext, title_and_detail, tj_border, tj_btn, tj_scnd_btn,
     },
-    welcome::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState, WorldRef},
+    emit_global,
 };
+
+use super::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState, WorldRef};
 
 pub struct CreateNewWorld {
     pub name_input: Entity<InputState>,
@@ -119,12 +121,18 @@ impl WelcomeScreen {
                                         name: name.clone(),
                                         path: path.clone(),
                                     });
-                                    emit_global(GlobalEvent::CreateWorkspace((
-                                        path.clone(),
-                                        name.to_string(),
-                                    )), cx);
+                                    emit_global(
+                                        GlobalEvent::CreateWorkspace((
+                                            path.clone(),
+                                            name.to_string(),
+                                        )),
+                                        cx,
+                                    );
                                 } else {
-                                    eprintln!("[Tojak] ディレクトリの作成に失敗しました");
+                                    emit_global(
+                                        GlobalEvent::PopupError("パスは無効です".into()),
+                                        cx,
+                                    );
                                 }
                             }))
                     }),

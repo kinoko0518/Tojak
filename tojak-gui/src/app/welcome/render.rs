@@ -1,42 +1,10 @@
-mod create_new_world;
-mod main_menu;
-
-use std::path::PathBuf;
-
-pub use crate::welcome::create_new_world::CreateNewWorld;
+use super::{GREATEST_CATHEGORY_TERM, WelcomeScreen, WelcomeState};
 use crate::{
-    components::{GHOST_TEXT, Horizontal2PanelLayout, ModDiv, subtext, tj_island},
+    GHOST_TEXT,
+    components::{Horizontal2PanelLayout, ModDiv, subtext, tj_island},
 };
 use const_format::concatcp;
-use gpui::{Div, Pixels, SharedString, div, prelude::*, px, rgb, rgba};
-
-
-
-enum WelcomeState {
-    MainMenu,
-    CreateNewWorld(CreateNewWorld),
-}
-
-pub struct WelcomeScreen {
-    state: WelcomeState,
-    worlds: Vec<WorldRef>,
-}
-
-impl Default for WelcomeScreen {
-    fn default() -> Self {
-        Self {
-            state: WelcomeState::MainMenu,
-            worlds: Vec::new(),
-        }
-    }
-}
-
-struct WorldRef {
-    name: SharedString,
-    path: PathBuf,
-}
-
-const GREATEST_CATHEGORY_TERM: &str = "ユニバース";
+use gpui::{Div, Pixels, div, prelude::*, px, rgb, rgba};
 
 impl Horizontal2PanelLayout for WelcomeScreen {
     fn left_panel() -> ModDiv<Self> {
@@ -61,10 +29,10 @@ impl Horizontal2PanelLayout for WelcomeScreen {
 }
 
 impl WelcomeScreen {
-    const MENU_WIDTH: Pixels = px(375.);
+    pub const MENU_WIDTH: Pixels = px(375.);
 
-    const TEXT_WIDTH: Pixels = px(200.);
-    const BUTTON_WIDTH: Pixels = px(75.);
+    pub const TEXT_WIDTH: Pixels = px(200.);
+    pub const BUTTON_WIDTH: Pixels = px(75.);
 
     fn render_right_panel(
         &mut self,

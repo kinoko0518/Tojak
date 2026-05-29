@@ -1,6 +1,6 @@
 use gpui::{Div, Pixels, div, prelude::*, px, rgb, rgba};
 
-use crate::components::{BORDER, DARKER_BG, LIGHTER_BG};
+use crate::{BORDER, DARKER_BG, LIGHTER_BG};
 
 pub type ModDiv<T> = fn(&mut T, Div, window: &mut gpui::Window, cx: &mut Context<T>) -> Div;
 

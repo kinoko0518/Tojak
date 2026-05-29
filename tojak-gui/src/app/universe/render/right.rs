@@ -1,9 +1,7 @@
 use gpui::{Context, Div, IntoElement, ParentElement, Styled, Window, div};
 
-use crate::{
-    components::subtext,
-    universe::{Universe, UniverseRightPanel},
-};
+use super::super::{Universe, UniverseRightPanel};
+use crate::components::subtext;
 
 impl Universe {
     pub fn right(&mut self, original: Div, _: &mut Window, _: &mut Context<Self>) -> Div {

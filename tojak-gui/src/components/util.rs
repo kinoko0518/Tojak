@@ -1,6 +1,6 @@
 use gpui::{Div, Length, div, prelude::*, px, rgb, rgba};
 
-use crate::components::{BORDER, GHOST_TEXT, LIGHTER_BG};
+use crate::{BORDER, GHOST_TEXT, LIGHTER_BG};
 
 pub fn tj_island() -> Div {
     div()

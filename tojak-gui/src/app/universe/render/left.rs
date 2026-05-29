@@ -4,12 +4,8 @@ use gpui::{
 };
 use gpui_component::Icon;
 
-use crate::{
-    GlobalEvent,
-    components::GHOST_TEXT,
-    emit_global, emit_universe,
-    universe::{Universe, UniverseEvent},
-};
+use super::super::Universe;
+use crate::{GHOST_TEXT, GlobalEvent, UniverseEvent, emit_global, emit_universe};
 
 impl Universe {
     pub fn left(&mut self, original: Div, _: &mut Window, cx: &mut Context<Self>) -> Div {

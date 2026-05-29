@@ -4,7 +4,7 @@ use gpui::{
 };
 use gpui_component::input::{Input, InputEvent, InputState};
 
-use crate::{emit_universe, universe::UniverseEvent};
+use crate::{UniverseEvent, emit_universe};
 
 pub struct TitleEditBus;
 

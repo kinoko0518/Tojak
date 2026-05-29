@@ -3,8 +3,8 @@ use gpui::{
 };
 
 use crate::{
-    components::ACCENT,
-    universe::editor::command::{ConditonedTransition, ParagraphKind},
+    ACCENT,
+    app::universe::editor::command::{ConditonedTransition, ParagraphKind},
 };
 
 fn cl() -> Div {

@@ -5,14 +5,14 @@ use gpui::{
 use gpui_component::input::Input;
 
 use crate::{
-    components::{ACCENT, BORDER, LIGHTER_BG},
-    emit_universe,
-    universe::{
-        HandleBackspace, UniverseEvent,
+    ACCENT, BORDER, LIGHTER_BG, UniverseEvent,
+    app::universe::{
+        HandleBackspace,
         editor::{
             Paragraphs, command::parse_paragraph_kind, paragraph::paragraph_disp::render_paragraph,
         },
     },
+    emit_universe,
 };
 
 impl Render for Paragraphs {

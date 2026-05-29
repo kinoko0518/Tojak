@@ -13,15 +13,13 @@ pub use paragraph::Paragraphs;
 use serde::{Deserialize, Serialize};
 pub use title_edit::TitleEdit;
 
-use crate::EVENT_SUBDIR;
+use super::{EVENT_EXTENSION, EVENT_SUBDIR};
 
 pub struct Editor {
     pub base: PathBuf,
     title_field: Entity<TitleEdit>,
     paragraphs: Entity<Paragraphs>,
 }
-
-const EVENT_EXTENSION: &str = "json";
 
 #[derive(Serialize, Deserialize)]
 pub struct Event {
@@ -109,6 +107,7 @@ impl Editor {
             for p in &paragraphs {
                 paragraph.subscribe_to_paragraph(p, window, cx);
             }
+
             paragraph
         });
 

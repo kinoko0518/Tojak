@@ -1,10 +1,7 @@
 use gpui::{AppContext, Context, Entity, Window};
 use gpui_component::input::{InputEvent, InputState};
 
-use crate::{
-    emit_universe,
-    universe::{UniverseEvent, editor::Paragraphs},
-};
+use crate::{UniverseEvent, app::universe::editor::Paragraphs, emit_universe};
 
 impl Paragraphs {
     pub fn subscribe_to_paragraph(
