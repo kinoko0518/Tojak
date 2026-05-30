@@ -24,13 +24,16 @@ impl Universe {
             let query = (!text.is_empty()).then(|| text.as_str());
             self.meta.read_events(query)
         };
+        let renaming = self.renaming.clone();
+        let rename_input = self.rename_input.clone();
+
         let event_list = match events {
             Ok(events) => div().children(
                 events
                     .into_iter()
                     .enumerate()
                     .map(|(i, path)| (self.meta.path.as_path(), i, path))
-                    .map(Self::render_event_list(cx)),
+                    .map(Self::render_event_list(renaming, rename_input, cx)),
             ),
             Err(error) => {
                 emit_global(GlobalEvent::PopupError(error.to_string()), cx);

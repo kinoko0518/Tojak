@@ -24,6 +24,8 @@ pub enum UniverseEvent {
     OpenEvent(String),
     CreateEvent(String),
     Rename((String, String)),
+    SetEpisodeOne(String),
+    DeleteEvent(String),
 }
 
 pub struct UniverseEventBus;

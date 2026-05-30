@@ -13,7 +13,10 @@ pub use paragraph::Paragraphs;
 use serde::{Deserialize, Serialize};
 pub use title_edit::TitleEdit;
 
-use crate::{EVENT_EXTENSION, EVENT_SUBDIR};
+use crate::{
+    EVENT_EXTENSION, EVENT_SUBDIR,
+    app::{EventBus, UniverseEvent},
+};
 
 pub struct Editor {
     pub base: PathBuf,
@@ -27,7 +30,26 @@ pub struct Event {
     pub paragraphs: Vec<String>,
 }
 
+pub struct EventNowOn {
+    pub name: String,
+    pub path: Option<PathBuf>,
+}
+
+impl EventNowOn {
+    pub fn saved_on_disk(&self) -> bool {
+        self.path.is_some()
+    }
+}
+
 impl Editor {
+    pub fn editing(&self, cx: &App) -> EventNowOn {
+        let name = self.title_field.read(cx).input.read(cx).text().to_string();
+        let path_expected = self.base.join(EVENT_SUBDIR).join(&name);
+        let path = path_expected.exists().then(|| path_expected);
+
+        EventNowOn { name, path }
+    }
+
     pub fn new(base: PathBuf, window: &mut Window, cx: &mut App) -> Entity<Self> {
         let title_field = TitleEdit::new(window, cx);
         let paragraphs = Paragraphs::empty(window, cx);
@@ -36,6 +58,25 @@ impl Editor {
             base,
             title_field,
             paragraphs,
+        });
+
+        cx.update_entity(&me, |_, cx| {
+            let bus = cx.global::<EventBus>().universe.clone();
+            cx.subscribe_in(
+                &bus,
+                window,
+                |this: &mut Self, _, event, window, cx| match event {
+                    // 別の場所で編集中のファイルの名前が変更されたら合わせて更新
+                    UniverseEvent::Rename((from, new)) => {
+                        if from.as_str() == this.editing(cx).name.as_str() {
+                            this.title_field
+                                .update(cx, |field, cx| field.set_field(new.clone(), window, cx))
+                        }
+                    }
+                    _ => (),
+                },
+            )
+            .detach();
         });
 
         me
